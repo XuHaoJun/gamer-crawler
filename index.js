@@ -39,6 +39,31 @@ function handleFirstPage(platform, res) {
   return Promise.all(ps).then(_.flatten);
 }
 
+// platforms: ['ANIME', 'COMIC', 'novel', 'PC', 'PS4',
+//             'PS3', 'wiiu', 'XBONE', 'xbox360',
+//             'PSV', 'PSP',
+//             'OLG', 'WEB', 'FACEBOOK', 'Android',
+//             'ios', 'GBA']
+
+function getRegularACGType(platform) {
+  switch (platform) {
+  case 'ANIME':
+    return 'anime';
+  case 'COMIC':
+    return 'comic';
+  case 'XBONE':
+    return 'xbonx';
+  case 'WEB':
+    return 'web';
+  case 'FACEBOOK':
+    return 'facebook';
+  case 'Android':
+    return 'android';
+  default:
+    return platform;
+  }
+}
+
 function handleACG(platform, res) {
   let $ = cheerio.load(res.text);
   $('script').remove();
@@ -53,7 +78,7 @@ function handleACG(platform, res) {
   let desc = $('#BH-master > div.BH-lbox.ACG-mster_box6 > .wikiContent').text() || '';
   let acg = {
     id: id,
-    acgType: platform,
+    acgType: getRegularACGType(platform),
     nameTW: nameTW,
     nameJP: nameJP,
     nameEN: nameEN,
