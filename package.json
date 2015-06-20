@@ -1,6 +1,6 @@
 {
   "name": "gamer-crawler",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "crawler of www.gamer.com.tw",
   "main": "index.js",
   "author": "XuHaoJun",

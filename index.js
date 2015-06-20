@@ -87,6 +87,9 @@ function handleACG(platform, res) {
     case '台灣發售':
       acg.sellDateTaiwan = attrValue == '不明' ? null: new Date(attrValue);
       break;
+    case '發售日期':
+      acg.sellDate = attrValue == '不明' ? null: new Date(attrValue);
+      break;
     case '播出集數':
     case '發行集數':
       {
