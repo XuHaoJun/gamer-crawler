@@ -1,6 +1,4 @@
-# Usage
-```javascript
-var GamerCrawler = require('gamer-crawler');
+var GamerCrawler = require('../index');
 GamerCrawler
   .download({
     takeNumPages: 1,
@@ -13,4 +11,3 @@ GamerCrawler
     console.log('download done.');
     console.log(acgs.length);
   });
-```
