@@ -39,12 +39,6 @@ function handleFirstPage(platform, res) {
   return Promise.all(ps).then(_.flatten);
 }
 
-// platforms: ['ANIME', 'COMIC', 'novel', 'PC', 'PS4',
-//             'PS3', 'wiiu', 'XBONE', 'xbox360',
-//             'PSV', 'PSP',
-//             'OLG', 'WEB', 'FACEBOOK', 'Android',
-//             'ios', 'GBA']
-
 function getRegularACGType(platform) {
   switch (platform) {
   case 'ANIME':
@@ -247,27 +241,32 @@ function handleACG(platform, res) {
   return acg;
 }
 
+function _downloadACG(url, platform) {
+  return (
+    rp.get(url)
+      .set('Accept', 'text/html')
+      .end()
+      .then(handleACG.bind(this, platform))
+  );
+}
+
 function downloadACGs(acgLinks) {
-  let i = 0;
-  let length = acgLinks.length;
-  let ps = new Array(length);
-  for(i = 0; i < length; i++) {
-    let acgLink = acgLinks[i];
-    let platform = acgLink.platform;
-    let url = acgLink.link;
-    ps[i] = (
-      rp.get(url)
-        .set('Accept', 'text/html')
-        .end()
-        .delay(i * this.options.delay)
-        .then(handleACG.bind(this, platform))
-    );
-  }
-  return Promise.all(ps);
+  return (
+    Promise.map(acgLinks, function(acgLink) {
+      let platform = acgLink.platform;
+      let url = acgLink.link;
+      return (
+        Promise
+          .delay(this.options.delay)
+          .then(_downloadACG.bind(this, url, platform))
+      );
+    }.bind(this), {concurrency: this.options.maxConnections})
+  );
 }
 
 function defaultOptions() {
   return {
+    maxConnections: 4,
     takeNumPages: Infinity,
     onCompleteACG: null,
     onlyACGid: true,
@@ -280,6 +279,15 @@ function defaultOptions() {
   };
 }
 
+function _downloadFirstPage(url, platform) {
+  return (
+    rp.get(url)
+      .set('Accept', 'text/html')
+      .end()
+      .then(handleFirstPage.bind(this, platform))
+  );
+}
+
 function download(options) {
   if (options) {
     options = assign(defaultOptions(), options);
@@ -290,29 +298,16 @@ function download(options) {
     options: options
   };
   let delay = options.delay;
-  let i = 0;
   let platforms = options.platforms;
-  let length = platforms.length;
-  let ps = new Array(platforms.length);
-  for(i = 0; i<length; i++) {
-    let platform = platforms[i];
-    self.platform = platform;
-    let url = 'http://acg.gamer.com.tw/index.php?page=1&p=' + platform;
-    ps[i] = (
-      Promise
-        .delay(i * delay)
-        .then(function() {
-          return (
-            rp.get(url)
-              .set('Accept', 'text/html')
-              .end()
-              .then(handleFirstPage.bind(this, platform))
-          );
-        }.bind(self))
-    );
-  }
   return (
-    Promise.all(ps)
+    Promise.map(platforms, function(platform, i) {
+      let url = 'http://acg.gamer.com.tw/index.php?page=1&p=' + platform;
+      return (
+        Promise
+          .delay(delay)
+          .then(_downloadFirstPage.bind(this, url, platform))
+      );
+    }.bind(self), {concurrency: options.maxConnections})
       .then(_.flatten)
       .then(downloadACGs.bind(self))
   );
