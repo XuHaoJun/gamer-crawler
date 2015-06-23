@@ -21,22 +21,27 @@ function handlePageLinks(platform, res) {
 function handleFirstPage(platform, res) {
   let $ = cheerio.load(res.text);
   let numPage = parseInt($('#BH-pagebtn > p > a').last().text());
-  var ps = new Array();
   let i = 1;
+  let urls = [];
   for(i = 1; i <= numPage; i++) {
     if (i > this.options.takeNumPages) {
       break;
     }
     let url = 'http://acg.gamer.com.tw/index.php?page='+ i +'&p='+ platform;
-    ps.push(
-      rp.get(url)
-        .set('Accept', 'text/html')
-        .end()
-        .delay((i - 1) * this.options.delay)
-        .then(handlePageLinks.bind(this, platform))
-    );
+    urls.push(url);
   }
-  return Promise.all(ps).then(_.flatten);
+  return (
+    Promise.map(urls, function(url) {
+      return (
+        rp.get(url)
+          .set('Accept', 'text/html')
+          .end()
+          .delay(this.options.delay)
+          .then(handlePageLinks.bind(this, platform))
+      );
+    }.bind(this), {concurrency: this.options.maxConnections})
+      .then(_.flatten)
+  );
 }
 
 function getRegularACGType(platform) {
